@@ -1,5 +1,4 @@
 #include "raylib.h"
-#include "raymath.h"
 
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
@@ -15,6 +14,26 @@ void DrawPaddle(const Entity* paddle) {
     DrawRectangleV(paddle->position, paddle->size, paddle->color);
 }
 
+void ConstrainMovement(Entity* paddle) {
+    if (paddle->position.y <= 0){
+        paddle->position.y = 0;
+    }
+    if (paddle->position.y + paddle->size.y >= (float)GetScreenHeight()) {
+        paddle->position.y = (float)GetScreenHeight() - paddle->size.y;
+    }
+}
+
+void UpdatePlayer(Entity* paddle) {
+    if (IsKeyDown(KEY_UP)) {
+        paddle->position.y = paddle->position.y - paddle->velocity;
+    }
+    if (IsKeyDown(KEY_DOWN)) {
+        paddle->position.y = paddle->position.y + paddle->velocity;
+    }
+
+    ConstrainMovement(paddle);
+}
+
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -24,14 +43,14 @@ int main(void)
     //--------------------------------------------------------------------------------------
 
 
-    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "raylib [core] example - basic window");
+    InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Pong");
 
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
 
-    Entity Player = (Entity){ .position = {25,
-        (float)SCREEN_HEIGHT * 0.5f},
-        .size = {30, 60},
-        .velocity = 50.0f,
+    Entity Player = (Entity)
+        { .position = {25,(float)SCREEN_HEIGHT * 0.5f},
+        .size = {25, 125},
+        .velocity = 6.0f,
         .color = RED};
 
 
@@ -41,9 +60,7 @@ int main(void)
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         // Update
-        //----------------------------------------------------------------------------------
-        // TODO: Update your variables here
-        //----------------------------------------------------------------------------------
+        UpdatePlayer(&Player);
 
         // Draw
         //----------------------------------------------------------------------------------
