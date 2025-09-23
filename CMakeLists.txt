@@ -22,10 +22,6 @@ add_executable(${PROJECT_NAME} main.c)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib)
 
-if(WIN32 AND NOT MSVC)
-    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-mconsole")
-endif()
-
 # Copy resources after build
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD
