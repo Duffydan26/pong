@@ -1,5 +1,8 @@
 #include "raylib.h"
 
+unsigned int player_score = 0;
+unsigned int cpu_score = 0;
+
 const int SCREEN_WIDTH = 800;
 const int SCREEN_HEIGHT = 600;
 
@@ -78,10 +81,12 @@ void UpdateBall(Entity *ball) {
     }
 
     if (ball->position.x + ball->radius >= (float) SCREEN_WIDTH) {
+        cpu_score++;
         ResetBall(ball);
     }
 
     if (ball->position.x - ball->radius <= 0) {
+        player_score++;
         ResetBall(ball);
     }
 }
@@ -157,6 +162,10 @@ int main(void) {
         BeginDrawing();
 
         ClearBackground(DARKGRAY);
+        DrawRectangle(SCREEN_WIDTH * 0.5, 0, 5, SCREEN_HEIGHT, LIGHTGRAY);
+
+        DrawText(TextFormat("%i", cpu_score), SCREEN_WIDTH * 0.25f - 20, 20, 80, WHITE);
+        DrawText(TextFormat("%i", player_score), 3 * SCREEN_WIDTH * 0.25f - 20, 20, 80, WHITE);
 
         DrawPaddle(&Player);
         DrawPaddle(&Cpu);
