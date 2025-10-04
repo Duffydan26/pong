@@ -1,18 +1,23 @@
 #include "raylib.h"
 
-unsigned int player_score = 0;
-unsigned int cpu_score = 0;
-
-const int SCREEN_WIDTH = 800;
-const int SCREEN_HEIGHT = 600;
+const float SCREEN_WIDTH = 800.0f;
+const float SCREEN_HEIGHT = 600.0f;
 
 bool CPU_CAN_MOVE = true;
 
-typedef struct Entity {
+unsigned int player_score = 0;
+unsigned int cpu_score = 0;
+
+ typedef struct  Entity {
     Vector2 position;
     Vector2 size;
     float radius;
-    Vector2 velocity;
+
+    union {
+        Vector2 velocity;
+        float fixedMovementSpeed;
+    };
+
     Color color;
 } Entity;
 
@@ -28,17 +33,17 @@ void ConstrainMovement(Entity *entity) {
     if (entity->position.y <= 0) {
         entity->position.y = 0;
     }
-    if (entity->position.y + entity->size.y >= (float) SCREEN_HEIGHT) {
-        entity->position.y = (float) SCREEN_HEIGHT - entity->size.y;
+    if (entity->position.y + entity->size.y >= SCREEN_HEIGHT) {
+        entity->position.y = SCREEN_HEIGHT - entity->size.y;
     }
 }
 
 void UpdatePlayer(Entity *paddle) {
     if (IsKeyDown(KEY_UP)) {
-        paddle->position.y = paddle->position.y - paddle->velocity.x;
+        paddle->position.y = paddle->position.y - paddle->fixedMovementSpeed;
     }
     if (IsKeyDown(KEY_DOWN)) {
-        paddle->position.y = paddle->position.y + paddle->velocity.x;
+        paddle->position.y = paddle->position.y + paddle->fixedMovementSpeed;
     }
 
     ConstrainMovement(paddle);
@@ -47,10 +52,10 @@ void UpdatePlayer(Entity *paddle) {
 void UpdateCpu(Entity *paddle, Entity *ball) {
     if (CPU_CAN_MOVE) {
         if (paddle->position.y + paddle->size.y * 0.5 > ball->position.y) {
-            paddle->position.y = paddle->position.y - paddle->velocity.x;
+            paddle->position.y = paddle->position.y - paddle->fixedMovementSpeed;
         }
         if (paddle->position.y + paddle->size.y * 0.5 <= ball->position.y) {
-            paddle->position.y = paddle->position.y + paddle->velocity.x;
+            paddle->position.y = paddle->position.y + paddle->fixedMovementSpeed;
         }
     }
     ConstrainMovement(paddle);
@@ -72,15 +77,15 @@ void UpdateBall(Entity *ball) {
     ball->position.x += ball->velocity.x;
     ball->position.y += ball->velocity.y;
 
-    if (ball->position.x + ball->radius >= (float) SCREEN_WIDTH || ball->position.x - ball->radius <= 0) {
+    if (ball->position.x + ball->radius >= SCREEN_WIDTH || ball->position.x - ball->radius <= 0) {
         ball->velocity.x *= -1;
     }
 
-    if (ball->position.y + ball->radius >= (float) SCREEN_HEIGHT || ball->position.y - ball->radius <= 0) {
+    if (ball->position.y + ball->radius >= SCREEN_HEIGHT || ball->position.y - ball->radius <= 0) {
         ball->velocity.y *= -1;
     }
 
-    if (ball->position.x + ball->radius >= (float) SCREEN_WIDTH) {
+    if (ball->position.x + ball->radius >= SCREEN_WIDTH) {
         cpu_score++;
         ResetBall(ball);
     }
@@ -121,28 +126,30 @@ int main(void) {
 
     Entity Player = (Entity)
     {
-        .position = {(float) SCREEN_WIDTH - 50, (float) SCREEN_HEIGHT * 0.5f},
+        .position = {SCREEN_WIDTH - 50, SCREEN_HEIGHT * 0.5f},
         .size = {25, 125},
-        .velocity = {6.0f, 0},
+        .fixedMovementSpeed = 6.0f,
         .color = RED
     };
 
     Entity Cpu = (Entity){
-        .position = {50, (float) SCREEN_HEIGHT * 0.5f},
+        .position = {50, SCREEN_HEIGHT * 0.5f},
         .size = {25, 125},
-        .velocity = {6.0f, 0},
+        .fixedMovementSpeed = 6.0f,
         .color = BLUE
     };
 
     Cpu.position.y -= Cpu.size.y * 0.5f;
 
     Entity Ball = (Entity){
-        .position = {(float) SCREEN_WIDTH * 0.5f, (float) SCREEN_HEIGHT * 0.5f},
+        .position = {SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f},
         .size = {25, 25},
         .radius = 15,
         .velocity = {7.0f, 7.0f},
         .color = ORANGE
     };
+
+    PrintEntityLayout();
 
 
     //--------------------------------------------------------------------------------------
@@ -164,8 +171,8 @@ int main(void) {
         ClearBackground(DARKGRAY);
         DrawRectangle(SCREEN_WIDTH * 0.5, 0, 5, SCREEN_HEIGHT, LIGHTGRAY);
 
-        DrawText(TextFormat("%i", cpu_score), SCREEN_WIDTH * 0.25f - 20, 20, 80, WHITE);
-        DrawText(TextFormat("%i", player_score), 3 * SCREEN_WIDTH * 0.25f - 20, 20, 80, WHITE);
+        DrawText(TextFormat("%lu", cpu_score), SCREEN_WIDTH * 0.25f - 20, 20, 80, WHITE);
+        DrawText(TextFormat("%lu", player_score), 3 * SCREEN_WIDTH * 0.25f - 20, 20, 80, WHITE);
 
         DrawPaddle(&Player);
         DrawPaddle(&Cpu);
