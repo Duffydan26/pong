@@ -3,12 +3,14 @@
 const float SCREEN_WIDTH = 800.0f;
 const float SCREEN_HEIGHT = 600.0f;
 
+const float targetFrameRate = 60.0f;
+
 bool CPU_CAN_MOVE = true;
 
 unsigned int player_score = 0;
 unsigned int cpu_score = 0;
 
- typedef struct  Entity {
+typedef struct Entity {
     Vector2 position;
     Vector2 size;
     float radius;
@@ -38,24 +40,24 @@ void ConstrainMovement(Entity *entity) {
     }
 }
 
-void UpdatePlayer(Entity *paddle) {
+void UpdatePlayer(Entity *paddle, const float timeScale) {
     if (IsKeyDown(KEY_UP)) {
-        paddle->position.y = paddle->position.y - paddle->fixedMovementSpeed;
+        paddle->position.y = paddle->position.y - paddle->fixedMovementSpeed * timeScale;
     }
     if (IsKeyDown(KEY_DOWN)) {
-        paddle->position.y = paddle->position.y + paddle->fixedMovementSpeed;
+        paddle->position.y = paddle->position.y + paddle->fixedMovementSpeed * timeScale;
     }
 
     ConstrainMovement(paddle);
 }
 
-void UpdateCpu(Entity *paddle, Entity *ball) {
+void UpdateCpu(Entity *paddle, const Entity *ball, const float timeScale) {
     if (CPU_CAN_MOVE) {
         if (paddle->position.y + paddle->size.y * 0.5 > ball->position.y) {
-            paddle->position.y = paddle->position.y - paddle->fixedMovementSpeed;
+            paddle->position.y = paddle->position.y - paddle->fixedMovementSpeed * timeScale;
         }
         if (paddle->position.y + paddle->size.y * 0.5 <= ball->position.y) {
-            paddle->position.y = paddle->position.y + paddle->fixedMovementSpeed;
+            paddle->position.y = paddle->position.y + paddle->fixedMovementSpeed * timeScale;
         }
     }
     ConstrainMovement(paddle);
@@ -73,9 +75,9 @@ void ResetBall(Entity *ball) {
     CPU_CAN_MOVE = true;
 }
 
-void UpdateBall(Entity *ball) {
-    ball->position.x += ball->velocity.x;
-    ball->position.y += ball->velocity.y;
+void UpdateBall(Entity *ball, float timeScale) {
+    ball->position.x += ball->velocity.x * timeScale;
+    ball->position.y += ball->velocity.y * timeScale;
 
     if (ball->position.x + ball->radius >= SCREEN_WIDTH || ball->position.x - ball->radius <= 0) {
         ball->velocity.x *= -1;
@@ -97,7 +99,7 @@ void UpdateBall(Entity *ball) {
 }
 
 
-void CollisionCheck(Entity *player, Entity *cpu, Entity *ball) {
+void CollisionCheck(const Entity *player, const Entity *cpu, Entity *ball) {
     if (CheckCollisionCircleRec(ball->position, ball->radius, (Rectangle){
                                     player->position.x, player->position.y, player->size.x, player->size.y
                                 })) {
@@ -145,11 +147,9 @@ int main(void) {
         .position = {SCREEN_WIDTH * 0.5f, SCREEN_HEIGHT * 0.5f},
         .size = {25, 25},
         .radius = 15,
-        .velocity = {7.0f, 7.0f},
+        .velocity = {8.0f, 8.0f},
         .color = ORANGE
     };
-
-    PrintEntityLayout();
 
 
     //--------------------------------------------------------------------------------------
@@ -157,10 +157,12 @@ int main(void) {
     // Main game loop
     while (!WindowShouldClose()) // Detect window close button or ESC key
     {
+        const float timeScale = targetFrameRate * GetFrameTime();
+
         // Update
-        UpdatePlayer(&Player);
-        UpdateCpu(&Cpu, &Ball);
-        UpdateBall(&Ball);
+        UpdatePlayer(&Player, timeScale);
+        UpdateCpu(&Cpu, &Ball, timeScale);
+        UpdateBall(&Ball, timeScale);
 
         CollisionCheck(&Player, &Cpu, &Ball);
 
@@ -170,6 +172,8 @@ int main(void) {
 
         ClearBackground(DARKGRAY);
         DrawRectangle(SCREEN_WIDTH * 0.5, 0, 5, SCREEN_HEIGHT, LIGHTGRAY);
+
+        DrawText(TextFormat("Frame Time: %f", timeScale), 20, 5, 25, WHITE);
 
         DrawText(TextFormat("%lu", cpu_score), SCREEN_WIDTH * 0.25f - 20, 20, 80, WHITE);
         DrawText(TextFormat("%lu", player_score), 3 * SCREEN_WIDTH * 0.25f - 20, 20, 80, WHITE);
